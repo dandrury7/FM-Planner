@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FM Planner">
+  <meta name="theme-color" content="#080e15">
+  <title>FM Squad Planner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { background: #080e15; color: #e8f0f7; font-family: 'Barlow', sans-serif; min-height: 100vh; padding-bottom: 40px; }
+
+    /* Header */
+    .header { background: linear-gradient(135deg, #0c1820, #0f2030); border-bottom: 1px solid #1a2a3a; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .header-title { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 4px; color: #2a9d3e; }
+    .header-sub { font-size: 10px; color: #2a4a3a; letter-spacing: 2px; margin-top: 2px; font-family: monospace; }
+    .save-indicator { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #3a5a4a; font-family: monospace; letter-spacing: 1px; }
+    .save-dot { width: 7px; height: 7px; border-radius: 50%; background: #2a9d3e; box-shadow: 0 0 8px #2a9d3e; transition: all 0.3s; }
+    .save-dot.saving { background: #888; box-shadow: none; }
+
+    /* Main */
+    .main { max-width: 500px; margin: 0 auto; padding: 20px 14px; }
+
+    /* Section label */
+    .section-label { font-size: 10px; color: #2a4a3a; letter-spacing: 2px; margin-bottom: 10px; font-family: monospace; }
+
+    /* Save tabs */
+    .saves-section { margin-bottom: 20px; }
+    .saves-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .save-tab { display: flex; align-items: center; }
+    .save-tab-btn { padding: 8px 14px; background: transparent; border: 1px solid #1a2a3a; border-right: none; border-radius: 20px 0 0 20px; color: #4a6070; font-family: 'Barlow', sans-serif; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .save-tab-btn.active { background: rgba(42,157,62,0.15); border-color: #2a9d3e; color: #2a9d3e; }
+    .save-tab-del { padding: 8px 10px; background: transparent; border: 1px solid #1a2a3a; border-radius: 0 20px 20px 0; color: #3a4a4a; font-size: 11px; cursor: pointer; transition: all 0.2s; line-height: 1; }
+    .save-tab-del.active { border-color: #2a9d3e; background: rgba(42,157,62,0.08); }
+    .save-tab-del:hover { color: #e05050; }
+    .add-save-btn { padding: 8px 14px; background: transparent; border: 1px dashed #1a3a2a; border-radius: 20px; color: #2a4a3a; cursor: pointer; font-size: 13px; font-family: 'Barlow', sans-serif; transition: all 0.2s; white-space: nowrap; }
+    .add-save-btn:hover { border-color: #2a9d3e; color: #2a9d3e; }
+    .new-save-row { display: flex; gap: 6px; align-items: center; }
+    .new-save-input { background: #0c1820; border: 1px solid #2a9d3e; border-radius: 20px; padding: 8px 14px; color: #d0e8d8; font-family: 'Barlow', sans-serif; font-size: 13px; outline: none; width: 140px; }
+    .new-save-confirm { background: #2a9d3e; border: none; border-radius: 20px; padding: 8px 14px; color: #fff; cursor: pointer; font-size: 13px; font-weight: 600; }
+    .new-save-cancel { background: transparent; border: 1px solid #1a2a3a; border-radius: 20px; padding: 8px 12px; color: #4a6070; cursor: pointer; font-size: 13px; }
+
+    /* Formation */
+    .formation-section { margin-bottom: 22px; }
+    .formation-row { display: flex; gap: 7px; flex-wrap: wrap; }
+    .formation-btn { padding: 7px 14px; background: transparent; border: 1px solid #1a2a3a; border-radius: 6px; color: #3a5a4a; font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 1.5px; cursor: pointer; transition: all 0.15s; }
+    .formation-btn.active { background: rgba(42,157,62,0.15); border-color: #2a9d3e; color: #2a9d3e; }
+
+    /* Pitch */
+    .pitch { background: linear-gradient(180deg, #071a0e 0%, #0a2212 25%, #081e10 50%, #0a2212 75%, #071a0e 100%); border-radius: 14px; border: 2px solid #1a3a22; padding: 20px 10px; position: relative; box-shadow: 0 8px 40px rgba(0,0,0,0.6), inset 0 0 80px rgba(0,0,0,0.3); overflow: hidden; }
+    .pitch-lines { position: absolute; inset: 0; pointer-events: none; }
+    .pitch-row { display: flex; justify-content: space-around; align-items: flex-start; margin-bottom: 18px; }
+    .pitch-row:last-child { margin-bottom: 0; }
+
+    /* Player node */
+    .player-node { display: flex; flex-direction: column; align-items: center; cursor: pointer; flex: 1; transition: transform 0.15s; min-width: 0; padding: 0 2px; }
+    .player-node:active { transform: scale(0.95); }
+    .pos-circle { width: 44px; height: 44px; border-radius: 50%; border: 2px solid #1a3a22; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 11px; letter-spacing: 1px; color: #2a4a32; background: rgba(8,20,14,0.9); box-shadow: 0 2px 8px rgba(0,0,0,0.4); margin-bottom: 5px; transition: all 0.2s; flex-shrink: 0; }
+    .pos-circle.filled { background: radial-gradient(circle at 35% 35%, #3abb52, #1e8030); border-color: #2a9d3e; color: #fff; box-shadow: 0 0 16px rgba(42,157,62,0.4), 0 4px 12px rgba(0,0,0,0.4); }
+    .player-names { text-align: center; width: 100%; }
+    .player-starter { font-size: 10px; font-weight: 600; color: #1a3a22; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; }
+    .player-starter.filled { color: #c8e8d0; }
+    .player-backup { font-size: 9px; color: #142a1a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; }
+    .player-backup.filled { color: #4a7a5a; }
+
+    /* Footer */
+    .pitch-footer { display: flex; align-items: center; margin-top: 12px; gap: 16px; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #3a5a4a; }
+    .legend-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .filled-count { margin-left: auto; font-size: 11px; color: #2a4a3a; font-family: monospace; }
+    .filled-count span { color: #2a9d3e; }
+
+    /* Modal overlay */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.82); display: flex; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(6px); padding: 20px; }
+    .modal-box { background: #0c1820; border: 1px solid #2a9d3e; border-radius: 14px; padding: 28px 26px; width: 100%; max-width: 340px; box-shadow: 0 0 60px rgba(42,157,62,0.2), 0 20px 60px rgba(0,0,0,0.6); }
+    .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: #2a9d3e; letter-spacing: 3px; margin-bottom: 4px; }
+    .modal-sub { color: #3a5a4a; font-size: 10px; letter-spacing: 2px; margin-bottom: 20px; font-family: monospace; }
+    .input-label { font-size: 10px; letter-spacing: 2px; margin-bottom: 6px; font-family: monospace; }
+    .input-label.starter { color: #2a9d3e; }
+    .input-label.backup { color: #4a7a5a; }
+    .player-input { width: 100%; background: #0f2030; border: 1px solid #1a3a2a; border-radius: 7px; padding: 11px 14px; color: #d0e8d8; font-family: 'Barlow', sans-serif; font-size: 15px; outline: none; margin-bottom: 14px; transition: border-color 0.2s; }
+    .player-input:focus { border-color: #2a9d3e; }
+    .player-input.backup-input:focus { border-color: #4a7a5a; }
+    .modal-btns { display: flex; gap: 10px; margin-top: 8px; }
+    .btn-save { flex: 1; background: #2a9d3e; border: none; border-radius: 8px; padding: 13px 0; color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 2px; cursor: pointer; }
+    .btn-cancel { flex: 1; background: transparent; border: 1px solid #1a2a3a; border-radius: 8px; padding: 13px 0; color: #4a6a5a; font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 2px; cursor: pointer; }
+
+    /* Delete confirm */
+    .delete-box { background: #0c1820; border: 1px solid #9d2a2a; border-radius: 14px; padding: 28px 26px; width: 100%; max-width: 300px; box-shadow: 0 0 60px rgba(157,42,42,0.15); }
+    .delete-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: #e05050; letter-spacing: 2px; margin-bottom: 10px; }
+    .delete-text { color: #7a8a96; font-size: 13px; margin-bottom: 22px; line-height: 1.5; }
+    .btn-delete { flex: 1; background: #9d2a2a; border: none; border-radius: 8px; padding: 12px 0; color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 2px; cursor: pointer; }
+
+    /* Hidden */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">FM SQUAD PLANNER</div>
+    <div class="header-sub">FOOTBALL MANAGER SAVE MANAGER</div>
+  </div>
+  <div class="save-indicator">
+    <div class="save-dot" id="saveDot"></div>
+    <span id="saveLabel">SAVED</span>
+  </div>
+</div>
+
+<div class="main">
+  <!-- Saves -->
+  <div class="saves-section">
+    <div class="section-label">SAVES</div>
+    <div class="saves-row" id="savesRow">
+      <!-- rendered by JS -->
+    </div>
+  </div>
+
+  <!-- Formation -->
+  <div class="formation-section">
+    <div class="section-label">FORMATION</div>
+    <div class="formation-row" id="formationRow"></div>
+  </div>
+
+  <!-- Pitch -->
+  <div class="pitch" id="pitch">
+    <svg class="pitch-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
+      <line x1="10" y1="50" x2="90" y2="50" stroke="rgba(255,255,255,0.05)" stroke-width="0.3"/>
+      <ellipse cx="50" cy="50" rx="8" ry="10" stroke="rgba(255,255,255,0.05)" stroke-width="0.3" fill="none"/>
+      <rect x="30" y="3" width="40" height="14" stroke="rgba(255,255,255,0.05)" stroke-width="0.3" fill="none"/>
+      <rect x="30" y="83" width="40" height="14" stroke="rgba(255,255,255,0.05)" stroke-width="0.3" fill="none"/>
+    </svg>
+    <!-- rows rendered by JS -->
+  </div>
+
+  <div class="pitch-footer">
+    <div class="legend-item"><div class="legend-dot" style="background:#2a9d3e"></div>Starter</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#1a3a22"></div>Backup</div>
+    <div class="filled-count"><span id="filledCount">0</span>/<span id="totalCount">11</span> FILLED · TAP TO EDIT</div>
+  </div>
+</div>
+
+<!-- Player modal -->
+<div class="modal-overlay hidden" id="playerModal">
+  <div class="modal-box">
+    <div class="modal-title" id="modalTitle">GK</div>
+    <div class="modal-sub">ASSIGN PLAYERS</div>
+    <div class="input-label starter">STARTER</div>
+    <input class="player-input" id="starterInput" placeholder="Player name..." autocomplete="off" autocorrect="off" spellcheck="false">
+    <div class="input-label backup">BACKUP</div>
+    <input class="player-input backup-input" id="backupInput" placeholder="Player name..." autocomplete="off" autocorrect="off" spellcheck="false">
+    <div class="modal-btns">
+      <button class="btn-save" id="modalSaveBtn">SAVE</button>
+      <button class="btn-cancel" id="modalCancelBtn">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete confirm modal -->
+<div class="modal-overlay hidden" id="deleteModal">
+  <div class="delete-box">
+    <div class="delete-title">DELETE SAVE?</div>
+    <div class="delete-text" id="deleteText"></div>
+    <div class="modal-btns">
+      <button class="btn-delete" id="deleteConfirmBtn">DELETE</button>
+      <button class="btn-cancel" id="deleteCancelBtn">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'fm-squad-planner-v1';
+
+const FORMATIONS = {
+  '4-4-2': { rows: [
+    [{id:'ls',label:'ST'},{id:'rs',label:'ST'}],
+    [{id:'lm',label:'LM'},{id:'lcm',label:'CM'},{id:'rcm',label:'CM'},{id:'rm',label:'RM'}],
+    [{id:'lb',label:'LB'},{id:'lcb',label:'CB'},{id:'rcb',label:'CB'},{id:'rb',label:'RB'}],
+    [{id:'gk',label:'GK'}]
+  ]},
+  '4-3-3': { rows: [
+    [{id:'lw',label:'LW'},{id:'st',label:'ST'},{id:'rw',label:'RW'}],
+    [{id:'lcm',label:'CM'},{id:'cm',label:'CM'},{id:'rcm',label:'CM'}],
+    [{id:'lb',label:'LB'},{id:'lcb',label:'CB'},{id:'rcb',label:'CB'},{id:'rb',label:'RB'}],
+    [{id:'gk',label:'GK'}]
+  ]},
+  '4-2-3-1': { rows: [
+    [{id:'st',label:'ST'}],
+    [{id:'lam',label:'AM'},{id:'cam',label:'AM'},{id:'ram',label:'AM'}],
+    [{id:'ldm',label:'DM'},{id:'rdm',label:'DM'}],
+    [{id:'lb',label:'LB'},{id:'lcb',label:'CB'},{id:'rcb',label:'CB'},{id:'rb',label:'RB'}],
+    [{id:'gk',label:'GK'}]
+  ]},
+  '3-5-2': { rows: [
+    [{id:'ls',label:'ST'},{id:'rs',label:'ST'}],
+    [{id:'lwb',label:'LWB'},{id:'lcm',label:'CM'},{id:'cm',label:'CM'},{id:'rcm',label:'CM'},{id:'rwb',label:'RWB'}],
+    [{id:'lcb',label:'CB'},{id:'cb',label:'CB'},{id:'rcb',label:'CB'}],
+    [{id:'gk',label:'GK'}]
+  ]},
+  '4-5-1': { rows: [
+    [{id:'st',label:'ST'}],
+    [{id:'lm',label:'LM'},{id:'lcm',label:'CM'},{id:'cm',label:'CM'},{id:'rcm',label:'CM'},{id:'rm',label:'RM'}],
+    [{id:'lb',label:'LB'},{id:'lcb',label:'CB'},{id:'rcb',label:'CB'},{id:'rb',label:'RB'}],
+    [{id:'gk',label:'GK'}]
+  ]},
+  '5-3-2': { rows: [
+    [{id:'ls',label:'ST'},{id:'rs',label:'ST'}],
+    [{id:'lcm',label:'CM'},{id:'cm',label:'CM'},{id:'rcm',label:'CM'}],
+    [{id:'lwb',label:'LWB'},{id:'lcb',label:'CB'},{id:'cb',label:'CB'},{id:'rcb',label:'CB'},{id:'rwb',label:'RWB'}],
+    [{id:'gk',label:'GK'}]
+  ]}
+};
+
+// --- State ---
+let state = {
+  saves: {
+    'Arsenal': { formation: '4-3-3', players: {} },
+    'Southampton': { formation: '4-4-2', players: {} }
+  },
+  activeSave: 'Arsenal'
+};
+
+let currentModalPosId = null;
+let pendingDeleteSave = null;
+
+// --- Storage ---
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      state = parsed;
+      // ensure activeSave is valid
+      if (!state.saves[state.activeSave]) {
+        state.activeSave = Object.keys(state.saves)[0];
+      }
+    }
+  } catch(e) {}
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    document.getElementById('saveDot').className = 'save-dot';
+    document.getElementById('saveLabel').textContent = 'SAVED';
+  } catch(e) {
+    document.getElementById('saveDot').className = 'save-dot saving';
+    document.getElementById('saveLabel').textContent = 'ERROR';
+  }
+}
+
+// --- Render ---
+function render() {
+  renderSaves();
+  renderFormations();
+  renderPitch();
+}
+
+function renderSaves() {
+  const row = document.getElementById('savesRow');
+  row.innerHTML = '';
+
+  Object.keys(state.saves).forEach(name => {
+    const isActive = name === state.activeSave;
+    const tab = document.createElement('div');
+    tab.className = 'save-tab';
+
+    const btn = document.createElement('button');
+    btn.className = 'save-tab-btn' + (isActive ? ' active' : '');
+    btn.textContent = name;
+    btn.onclick = () => { state.activeSave = name; render(); };
+
+    const del = document.createElement('button');
+    del.className = 'save-tab-del' + (isActive ? ' active' : '');
+    del.textContent = '✕';
+    del.title = 'Delete save';
+    del.onclick = (e) => { e.stopPropagation(); openDeleteModal(name); };
+
+    tab.appendChild(btn);
+    tab.appendChild(del);
+    row.appendChild(tab);
+  });
+
+  // New save button / input
+  const addBtn = document.createElement('button');
+  addBtn.className = 'add-save-btn';
+  addBtn.textContent = '+ New Save';
+  addBtn.onclick = () => { row.replaceChild(buildNewSaveInput(), addBtn); };
+  row.appendChild(addBtn);
+}
+
+function buildNewSaveInput() {
+  const wrap = document.createElement('div');
+  wrap.className = 'new-save-row';
+
+  const input = document.createElement('input');
+  input.className = 'new-save-input';
+  input.placeholder = 'Save name...';
+  input.autocomplete = 'off';
+
+  const confirm = document.createElement('button');
+  confirm.className = 'new-save-confirm';
+  confirm.textContent = 'Add';
+
+  const cancel = document.createElement('button');
+  cancel.className = 'new-save-cancel';
+  cancel.textContent = '✕';
+
+  const doAdd = () => {
+    const name = input.value.trim();
+    if (!name || state.saves[name]) { input.focus(); return; }
+    state.saves[name] = { formation: '4-3-3', players: {} };
+    state.activeSave = name;
+    saveState();
+    render();
+  };
+
+  input.onkeydown = e => { if (e.key === 'Enter') doAdd(); if (e.key === 'Escape') render(); };
+  confirm.onclick = doAdd;
+  cancel.onclick = () => render();
+
+  wrap.appendChild(input);
+  wrap.appendChild(confirm);
+  wrap.appendChild(cancel);
+  setTimeout(() => input.focus(), 50);
+  return wrap;
+}
+
+function renderFormations() {
+  const row = document.getElementById('formationRow');
+  row.innerHTML = '';
+  const current = state.saves[state.activeSave].formation;
+  Object.keys(FORMATIONS).forEach(f => {
+    const btn = document.createElement('button');
+    btn.className = 'formation-btn' + (f === current ? ' active' : '');
+    btn.textContent = f;
+    btn.onclick = () => {
+      state.saves[state.activeSave].formation = f;
+      saveState();
+      render();
+    };
+    row.appendChild(btn);
+  });
+}
+
+function renderPitch() {
+  const pitch = document.getElementById('pitch');
+  // Remove old rows (keep the SVG)
+  Array.from(pitch.querySelectorAll('.pitch-row')).forEach(r => r.remove());
+
+  const save = state.saves[state.activeSave];
+  const formation = FORMATIONS[save.formation];
+  const allPos = formation.rows.flat();
+
+  let filled = 0;
+  formation.rows.forEach((rowPositions, ri) => {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'pitch-row';
+    if (ri === formation.rows.length - 1) rowEl.style.marginBottom = '0';
+
+    rowPositions.forEach(pos => {
+      const players = save.players[pos.id] || ['', ''];
+      const hasStarter = !!players[0];
+      const hasBackup = !!players[1];
+      const isFilled = hasStarter || hasBackup;
+      if (isFilled) filled++;
+
+      const node = document.createElement('div');
+      node.className = 'player-node';
+      node.onclick = () => openPlayerModal(pos.id, pos.label, players);
+
+      const circle = document.createElement('div');
+      circle.className = 'pos-circle' + (isFilled ? ' filled' : '');
+      circle.textContent = pos.label;
+
+      const names = document.createElement('div');
+      names.className = 'player-names';
+
+      const starter = document.createElement('div');
+      starter.className = 'player-starter' + (hasStarter ? ' filled' : '');
+      starter.textContent = players[0] || '—';
+
+      const backup = document.createElement('div');
+      backup.className = 'player-backup' + (hasBackup ? ' filled' : '');
+      backup.textContent = players[1] || '—';
+
+      names.appendChild(starter);
+      names.appendChild(backup);
+      node.appendChild(circle);
+      node.appendChild(names);
+      rowEl.appendChild(node);
+    });
+
+    pitch.appendChild(rowEl);
+  });
+
+  document.getElementById('filledCount').textContent = filled;
+  document.getElementById('totalCount').textContent = allPos.length;
+}
+
+// --- Player modal ---
+function openPlayerModal(posId, posLabel, players) {
+  currentModalPosId = posId;
+  document.getElementById('modalTitle').textContent = posLabel;
+  document.getElementById('starterInput').value = players[0] || '';
+  document.getElementById('backupInput').value = players[1] || '';
+  document.getElementById('playerModal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('starterInput').focus(), 100);
+}
+
+function closePlayerModal() {
+  document.getElementById('playerModal').classList.add('hidden');
+  currentModalPosId = null;
+}
+
+function savePlayerModal() {
+  if (!currentModalPosId) return;
+  const starter = document.getElementById('starterInput').value.trim();
+  const backup = document.getElementById('backupInput').value.trim();
+  state.saves[state.activeSave].players[currentModalPosId] = [starter, backup];
+  saveState();
+  renderPitch();
+  closePlayerModal();
+}
+
+document.getElementById('modalSaveBtn').onclick = savePlayerModal;
+document.getElementById('modalCancelBtn').onclick = closePlayerModal;
+document.getElementById('playerModal').onclick = (e) => { if (e.target === e.currentTarget) closePlayerModal(); };
+document.getElementById('starterInput').onkeydown = (e) => { if (e.key === 'Enter') document.getElementById('backupInput').focus(); };
+document.getElementById('backupInput').onkeydown = (e) => { if (e.key === 'Enter') savePlayerModal(); };
+
+// --- Delete modal ---
+function openDeleteModal(name) {
+  pendingDeleteSave = name;
+  document.getElementById('deleteText').textContent = `"${name}" and all its squad data will be permanently removed.`;
+  document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+  document.getElementById('deleteModal').classList.add('hidden');
+  pendingDeleteSave = null;
+}
+
+document.getElementById('deleteConfirmBtn').onclick = () => {
+  if (!pendingDeleteSave) return;
+  delete state.saves[pendingDeleteSave];
+  if (!state.saves[state.activeSave]) {
+    const keys = Object.keys(state.saves);
+    if (keys.length === 0) {
+      state.saves['My Save'] = { formation: '4-3-3', players: {} };
+    }
+    state.activeSave = Object.keys(state.saves)[0];
+  }
+  saveState();
+  render();
+  closeDeleteModal();
+};
+
+document.getElementById('deleteCancelBtn').onclick = closeDeleteModal;
+document.getElementById('deleteModal').onclick = (e) => { if (e.target === e.currentTarget) closeDeleteModal(); };
+
+// --- Init ---
+loadState();
+render();
+</script>
+</body>
+</html>
